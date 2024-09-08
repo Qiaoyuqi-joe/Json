@@ -4,12 +4,16 @@
   "private": true,
   "scripts": {
     "serve": "vue-cli-service serve",
+    "dev": "vue-cli-service serve",
     "build": "vue-cli-service build",
     "lint": "vue-cli-service lint"
   },
   "dependencies": {
-    "core-js": "^3.8.3",
+    "@amap/amap-jsapi-loader": "^1.0.1",
+    "core-js": "^3.38.1",
+    "echarts": "^5.5.1",
     "vue": "^3.2.13",
+    "vue-echarts": "^7.0.3",
     "vue-router": "^4.0.3",
     "vuex": "^4.0.0"
   },

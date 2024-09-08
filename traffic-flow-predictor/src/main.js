@@ -1,7 +1,7 @@
 import { createApp } from "vue";
 import App from "./App.vue";
-import router from "./router";
-// 创建 Vue 应用实例
-const app = createApp(App);
-app.use(router);
-app.mount("#app");
+import router from "./router/router";
+
+createApp(App)
+  .use(router) // 确保这里的 router 是已导入的
+  .mount("#app");
