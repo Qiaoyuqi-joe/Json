@@ -9,7 +9,7 @@
   },
   "dependencies": {
     "@amap/amap-jsapi-loader": "^1.0.1",
-    "vue": "^3.3.4"
+    "vue": "file:"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^4.2.3",

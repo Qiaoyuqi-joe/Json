@@ -1,17 +1,21 @@
 <template>
-  <div class="app-container">
+  <div class="home-container">
+    <header class="header">
+      <h1>网络用户画像系统</h1>
+    </header>
     <!-- 左侧地图搜索和显示部分 -->
     <div class="left-section">
       <div class="search-container">
         <input
-          v-model="searchQuery"
+          v-model="localsearchQuery"
           @keyup.enter="searchLocation"
           placeholder="输入地址进行搜索"
           class="search-input"
         />
         <button @click="searchLocation" class="search-button">搜索</button>
       </div>
-      <div id="container" class="map-container"></div>
+      <!-- 使用 GeoMap 组件 -->
+      <GeoMap />
     </div>
 
     <!-- 右侧图表展示部分 -->
@@ -29,112 +33,30 @@
 </template>
 
 <script setup>
-import AMapLoader from "@amap/amap-jsapi-loader";
-import { ref, onMounted } from "vue";
+import GeoMap from "@/components/GeoMap.vue"; // 引入GeoMap组件
+import { ref, onMounted, computed } from "vue";
+import { useStore } from "vuex"; // 使用Vuex Store
 import * as echarts from "echarts";
 import "@/assets/Styles.css"; // 引入外部 CSS 文件
 
-// 地图相关变量和逻辑
-const searchQuery = ref("");
-const path = ref([]);
-const current_position = ref([]);
-let placeSearch;
-let map;
-let AMap;
+// Vuex store 变量
+const store = useStore();
 
-function addMarker() {
-  if (!AMap || !map) return;
-  const marker = new AMap.Marker({
-    icon: "//a.amap.com/jsapi_demos/static/demo-center/icons/poi-marker-default.png",
-    position: current_position.value,
-    offset: new AMap.Pixel(-26, -54),
-  });
-  marker.setMap(map);
-}
+// 本地搜索框双向绑定
+const searchQuery = computed(() => store.state.searchQuery);
+const localsearchQuery = ref(searchQuery.value);
 
-function initMap() {
-  window._AMapSecurityConfig = {
-    securityJsCode: "934e3abdf65d36a21caae3a069789da3",
-  };
+// 路径和当前位置
+//const current_position = computed(() => store.state.current_position);
+//const path = computed(() => store.state.path);
 
-  AMapLoader.load({
-    key: "7778b36918b20db096abc451498af897",
-    version: "2.0",
-    plugins: [
-      "AMap.ToolBar",
-      "AMap.Scale",
-      "AMap.HawkEye",
-      "AMap.MapType",
-      "AMap.MouseTool",
-      "AMap.PlaceSearch",
-    ],
-  })
-    .then((loadedAMap) => {
-      AMap = loadedAMap;
-      map = new AMap.Map("container", {
-        viewMode: "3D",
-        zoom: 13,
-      });
-
-      AMap.plugin(
-        ["AMap.ToolBar", "AMap.Scale", "AMap.HawkEye", "AMap.MapType"],
-        function () {
-          map.addControl(new AMap.ToolBar());
-          map.addControl(new AMap.Scale());
-          map.addControl(new AMap.HawkEye());
-          map.addControl(new AMap.MapType());
-        },
-      );
-
-      placeSearch = new AMap.PlaceSearch({ map: map });
-
-      map.on("click", (e) => {
-        current_position.value = [e.lnglat.lng, e.lnglat.lat];
-        path.value.push([e.lnglat.lng, e.lnglat.lat]);
-        addMarker();
-        addPolyLine();
-      });
-
-      function addPolyLine() {
-        const polyline = new AMap.Polyline({
-          path: path.value,
-          isOutline: true,
-          outlineColor: "#ffeeff",
-          borderWeight: 1,
-          strokeColor: "#3366FF",
-          strokeOpacity: 0.6,
-          strokeWeight: 5,
-          strokeStyle: "solid",
-          lineJoin: "round",
-          lineCap: "round",
-          zIndex: 50,
-        });
-        map.add([polyline]);
-      }
-    })
-    .catch((e) => console.log(e));
-}
-
+// 搜索地址逻辑
 function searchLocation() {
-  if (!placeSearch) {
-    console.error("placeSearch 未定义");
-    return;
-  }
-
-  if (searchQuery.value.trim()) {
-    placeSearch.search(searchQuery.value, (status, result) => {
-      if (status === "complete" && result.info === "OK") {
-        const poi = result.poiList.pois[0];
-        if (poi) {
-          const lnglat = poi.location;
-          current_position.value = [lnglat.lng, lnglat.lat];
-          map.setCenter(current_position.value);
-          addMarker();
-        }
-      } else {
-        console.error("搜索失败:", result);
-      }
-    });
+  // 将搜索内容传递给 store 并在 GeoMap 中处理
+  if (localsearchQuery.value.trim()) {
+    store.dispatch("updateSearchQuery", localsearchQuery.value);
+  } else {
+    console.error("请输入有效的地址");
   }
 }
 
@@ -452,15 +374,15 @@ function loadChartData() {
 }
 
 onMounted(() => {
-  initMap();
-  loadChartData();
+  loadChartData(); // 加载图表数据
 
-  const upDownTrafficChartDom = document.getElementById("upDownTrafficChart");
-  const baseStationTrafficChartDom = document.getElementById(
-    "baseStationTrafficChart",
+  // 初始化图表
+  const upDownTrafficChart = echarts.init(
+    document.getElementById("upDownTrafficChart"),
   );
-  const upDownTrafficChart = echarts.init(upDownTrafficChartDom);
-  const baseStationTrafficChart = echarts.init(baseStationTrafficChartDom);
+  const baseStationTrafficChart = echarts.init(
+    document.getElementById("baseStationTrafficChart"),
+  );
 
   upDownTrafficChart.setOption(upDownTrafficChartOptions.value);
   baseStationTrafficChart.setOption(baseStationTrafficChartOptions.value);

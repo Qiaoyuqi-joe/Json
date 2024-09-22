@@ -1,5 +1,9 @@
 <template>
+  
   <div class="app-container">
+    <header class="header">
+      <h1>用户仪表盘</h1>
+    </header>
     <!-- 左侧地图搜索和显示部分 -->
     <div class="left-section">
       <div class="search-container">
@@ -11,7 +15,8 @@
         />
         <button @click="searchLocation" class="search-button">搜索</button>
       </div>
-      <div id="container" class="map-container"></div>
+      <!-- GeoMap 组件负责显示地图 -->
+      <GeoMap />
     </div>
 
     <!-- 右侧图表展示部分 -->
@@ -35,12 +40,16 @@
     </div>
   </div>
 </template>
-
 <script setup>
-import AMapLoader from "@amap/amap-jsapi-loader";
+import GeoMap from "@/components/GeoMap.vue";
 import { ref, onMounted } from "vue";
+import { useStore } from "vuex"; // 使用Vuex store
 import * as echarts from "echarts";
 import "@/assets/Styles.css"; // 引入外部 CSS 文件
+
+// 引用 Vuex store
+const store = useStore();
+const searchQuery = ref("");
 
 // 用户信息数据
 const userInfo = ref({
@@ -48,118 +57,21 @@ const userInfo = ref({
   ip: "10.233.233.233, 10.466.466.466...",
   mac: "E4-C7-67-73-08-FC",
   accessFrequency: 1024,
-  totalTraffic: 2048
+  totalTraffic: 2048,
 });
 
-// 地图相关变量和逻辑
-const searchQuery = ref("");
-const path = ref([]);
-const current_position = ref([]);
-let placeSearch;
-let map;
-let AMap;
 
-function addMarker() {
-  if (!AMap || !map) return;
-  const marker = new AMap.Marker({
-    icon: "//a.amap.com/jsapi_demos/static/demo-center/icons/poi-marker-default.png",
-    position: current_position.value,
-    offset: new AMap.Pixel(-26, -54),
-  });
-  marker.setMap(map);
-}
+// 搜索地点功能
+const searchLocation = () => {
+  store.dispatch("searchLocation", searchQuery.value);
+};
 
-function initMap() {
-  window._AMapSecurityConfig = {
-    securityJsCode: "934e3abdf65d36a21caae3a069789da3",
-  };
-
-  AMapLoader.load({
-    key: "7778b36918b20db096abc451498af897",
-    version: "2.0",
-    plugins: [
-      "AMap.ToolBar",
-      "AMap.Scale",
-      "AMap.HawkEye",
-      "AMap.MapType",
-      "AMap.MouseTool",
-      "AMap.PlaceSearch",
-    ],
-  })
-    .then((loadedAMap) => {
-      AMap = loadedAMap;
-      map = new AMap.Map("container", {
-        viewMode: "3D",
-        zoom: 13,
-      });
-
-      AMap.plugin(
-        ["AMap.ToolBar", "AMap.Scale", "AMap.HawkEye", "AMap.MapType"],
-        function () {
-          map.addControl(new AMap.ToolBar());
-          map.addControl(new AMap.Scale());
-          map.addControl(new AMap.HawkEye());
-          map.addControl(new AMap.MapType());
-        },
-      );
-
-      placeSearch = new AMap.PlaceSearch({ map: map });
-
-      map.on("click", (e) => {
-        current_position.value = [e.lnglat.lng, e.lnglat.lat];
-        path.value.push([e.lnglat.lng, e.lnglat.lat]);
-        addMarker();
-        addPolyLine();
-      });
-
-      function addPolyLine() {
-        const polyline = new AMap.Polyline({
-          path: path.value,
-          isOutline: true,
-          outlineColor: "#ffeeff",
-          borderWeight: 1,
-          strokeColor: "#3366FF",
-          strokeOpacity: 0.6,
-          strokeWeight: 5,
-          strokeStyle: "solid",
-          lineJoin: "round",
-          lineCap: "round",
-          zIndex: 50,
-        });
-        map.add([polyline]);
-      }
-    })
-    .catch((e) => console.log(e));
-}
-
-function searchLocation() {
-  if (!placeSearch) {
-    console.error("placeSearch 未定义");
-    return;
-  }
-
-  if (searchQuery.value.trim()) {
-    placeSearch.search(searchQuery.value, (status, result) => {
-      if (status === "complete" && result.info === "OK") {
-        const poi = result.poiList.pois[0];
-        if (poi) {
-          const lnglat = poi.location;
-          current_position.value = [lnglat.lng, lnglat.lat];
-          map.setCenter(current_position.value);
-          addMarker();
-        }
-      } else {
-        console.error("搜索失败:", result);
-      }
-    });
-  }
-}
 
 // 初始化图表的选项
 const upDownTrafficChartOptions = ref(null);
 const baseStationTrafficChartOptions = ref(null);
 
-function loadChartData() {
+const loadChartData = () => {
   // 生成示例代码中的数据
   const xAxisData = [];
   const data1 = [];
@@ -469,15 +381,11 @@ function loadChartData() {
 }
 
 onMounted(() => {
-  initMap();
+  
   loadChartData();
 
-  const upDownTrafficChartDom = document.getElementById("upDownTrafficChart");
-  const baseStationTrafficChartDom = document.getElementById(
-    "baseStationTrafficChart",
-  );
-  const upDownTrafficChart = echarts.init(upDownTrafficChartDom);
-  const baseStationTrafficChart = echarts.init(baseStationTrafficChartDom);
+  const upDownTrafficChart = echarts.init(document.getElementById("upDownTrafficChart"));
+  const baseStationTrafficChart = echarts.init(document.getElementById("baseStationTrafficChart"));
 
   upDownTrafficChart.setOption(upDownTrafficChartOptions.value);
   baseStationTrafficChart.setOption(baseStationTrafficChartOptions.value);

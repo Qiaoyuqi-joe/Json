@@ -1,20 +1,22 @@
 <template>
   <div class="station-dashboard">
     <!-- 添加标题 -->
-
+    <header class="header">
+      <h1>基站视角</h1>
+    </header>
     <!-- 左侧地图搜索和显示部分 -->
     <div class="left-section">
       <div class="search-container">
         <input
-          v-model="searchQuery"
+          v-model="localsearchQuery"
           @keyup.enter="searchStation"
           placeholder="输入基站ID进行搜索"
           class="search-input"
         />
         <button @click="searchStation" class="search-button">搜索</button>
       </div>
-      <div id="map-container" class="map-container"></div>
-      <!-- 地图容器 -->
+      <!-- GeoMap 组件负责显示地图 -->
+      <GeoMap />
     </div>
 
     <!-- 右侧基站信息和图表展示部分 -->
@@ -52,12 +54,22 @@
 </template>
 
 <script setup>
-import AMapLoader from "@amap/amap-jsapi-loader";
-import { ref, onMounted } from "vue";
+import GeoMap from "@/components/GeoMap.vue"; // 引入GeoMap组件
+import { ref, onMounted, computed } from "vue";
+import { useStore } from "vuex"; // 引入Vuex store
 import * as echarts from "echarts";
 import "@/assets/Styles.css"; // 引入外部 CSS 文件
 
-// 模拟基站数据
+const store = useStore();
+let myChart;
+
+// 从 Vuex 中获取状态
+const stationInfo = computed(() => store.state.stationInfo);
+const users = computed(() => stationInfo.value.users || []);
+const searchQuery = computed(() => store.state.searchQuery);
+const localsearchQuery = ref(searchQuery.value); // 本地双向绑定属性
+
+// 搜索基站并更新 store 中的搜索查询和基站数据
 
 const stations = {
   "WSPN-BS1": {
@@ -119,260 +131,143 @@ const stations = {
   },
 };
 
-const searchQuery = ref(""); // 基站ID搜索输入框绑定的变量
-const stationInfo = ref({
-  name: "",
-  id: "",
-  ip: "",
-  mac: "",
-});
-const users = ref([]); // 用户列表
-
-// 地图相关变量和逻辑
-let placeSearch;
-let map;
-let AMap;
-let myChart; // 定义全局变量来保存图表实例
-
-// 初始化地图和相关功能
-function initMap() {
-  window._AMapSecurityConfig = {
-    securityJsCode: "934e3abdf65d36a21caae3a069789da3",
-  };
-
-  AMapLoader.load({
-    key: "7778b36918b20db096abc451498af897",
-    version: "2.0",
-    plugins: ["AMap.ToolBar", "AMap.Scale", "AMap.PlaceSearch"],
-  })
-    .then((loadedAMap) => {
-      AMap = loadedAMap;
-      map = new AMap.Map("map-container", {
-        viewMode: "3D",
-        zoom: 13,
-        center: [116.397428, 39.90923], // 默认中心位置，北京
-      });
-
-      AMap.plugin(["AMap.ToolBar", "AMap.Scale"], function () {
-        map.addControl(new AMap.ToolBar());
-        map.addControl(new AMap.Scale());
-      });
-
-      placeSearch = new AMap.PlaceSearch({ map: map });
-    })
-    .catch((e) => console.log(e));
-}
-
-// 搜索基站并更新地图位置
-// 使用 IP 地址获取经纬度并更新地图位置
-/*
-async function getCoordinatesByIP(ip) {
-  const apiKey = "7778b36918b20db096abc451498af897"; // 替换为你的高德 API key
-  const url = `https://restapi.amap.com/v3/ip?ip=${ip}&key=${apiKey}`;
-
-  try {
-    const response = await fetch(url);
-    const data = await response.json();
-
-    if (data.status === "1") {
-      const rectangle = data.rectangle;
-      if (rectangle) {
-        // 解析 rectangle，获取经纬度范围并计算中心点
-        const coords = rectangle.split(";");
-        const coord1 = coords[0].split(",");
-        const coord2 = coords[1].split(",");
-
-        const lng = (parseFloat(coord1[0]) + parseFloat(coord2[0])) / 2;
-        const lat = (parseFloat(coord1[1]) + parseFloat(coord2[1])) / 2;
-
-        // 返回中心经纬度
-        return { lng, lat };
-      }
-    } else {
-      console.error("IP 定位失败", data.info);
-    }
-  } catch (error) {
-    console.error("请求失败", error);
-  }
-
-  return null;
-}
-*/
-// 搜索基站并更新地图位置
-async function searchStation() {
-  if (!placeSearch) {
-    console.error("placeSearch 未定义");
-    return;
-  }
-
-  const searchID = searchQuery.value.trim();
-
+// 搜索基站并更新 store 中的搜索查询和基站数据
+const searchStation = () => {
+  const searchID = localsearchQuery.value.trim();
   if (searchID) {
-    const station = stations[searchID]; // 根据ID从stations对象中查找
+    const station = stations[searchID];
     if (station) {
-      // 如果找到基站，先更新右侧的基站信息
-      stationInfo.value = station;
-      users.value = station.users;
+      store.dispatch("updateStationInfo", station);
+      store.dispatch("updateCurrentPosition", station.coordinates);
       updateChart(station.trafficData); // 更新图表
-
-      // 使用IP获取经纬度并更新地图
-      // const coords = await getCoordinatesByIP(station.ip);
-      // if (coords) {
-      //  const { lng, lat } = coords;
-      //    map.setCenter([lng, lat]); // 更新地图中心
-      //    addMarker([lng, lat]); // 添加标记
-      //    console.log("地图更新到该 IP 对应的位置:", lng, lat);
-      //  } else {
-      //    console.error("IP 地址未能成功获取地理位置");
-      //  }
-      //} else {
-      //  console.error("没有找到对应的基站。");
-      //}
-      //} else {
-      //  console.error("请输入基站ID进行搜索");
-
-      const coords = station.coordinates;
-      if (coords) {
-        map.setCenter(coords); // 更新地图中心
-        addMarker(coords); // 添加标记
-        console.log("地图更新到基站的位置:", coords[0], coords[1]);
-      } else {
-        console.error("没有为基站指定经纬度");
-      }
     } else {
-      console.error("没有找到对应的基站。");
+      console.error("未找到对应的基站");
     }
-  } else {
-    console.error("请输入基站ID进行搜索");
   }
-}
-
+};
 // 更新图表数据
-// 更新图表数据
-function updateChart(data) {
-  const option = {
-    series: [
-      {
-        name: "业务A",
-        data: data.A,
-      },
-      {
-        name: "业务B",
-        data: data.B,
-      },
-      {
-        name: "业务C",
-        data: data.C,
-      },
-    ],
-  };
-  myChart.setOption(option); // 更新图表数据
-}
-
-function addMarker(lnglat) {
-  // 创建带自定义图标的标记
-  const marker = new AMap.Marker({
-    position: lnglat,
-    map: map,
-    icon: new AMap.Icon({
-      size: new AMap.Size(40, 50), // 图标大小
-      image: require("@/components/station-icon.png"), // 使用相对路径引用图片// 自定义图标的路径
-      imageSize: new AMap.Size(40, 50), // 设置图标实际显示的大小
-    }),
-    offset: new AMap.Pixel(-20, -50), // 调整标记位置，使其与经纬度对齐
-  });
-
-  map.add(marker); // 在地图上添加标记
-}
-// 初始化图表函数
-function initChart() {
-  const chartDom = document.getElementById("trafficChart");
-  myChart = echarts.init(chartDom); // 初始化 ECharts 实例
-
-  // 初始化图表配置
-  const option = {
-    tooltip: {
-      trigger: "axis", // 触发类型，'axis' 表示整个坐标轴触发
-      axisPointer: {
-        // 坐标轴指示器，坐标轴触发有效
-        type: "shadow", // 默认为直线，可选为：'line' | 'shadow'
-      },
-      formatter: function (params) {
-        // 返回一个自定义的显示内容
-        const business = params
-          .map((p) => `${p.seriesName}: ${p.value}`)
-          .join("<br/>");
-        return `时间: ${params[0].axisValue}<br/>${business}`;
-      },
-    },
-    xAxis: {
-      type: "category",
-      data: [
-        "0:00",
-        "3:00",
-        "6:00",
-        "9:00",
-        "12:00",
-        "15:00",
-        "18:00",
-        "21:00",
+const updateChart = (data) => {
+  // 确保 myChart 已经初始化
+  if (myChart) {
+    const option = {
+      series: [
+        {
+          name: "业务A",
+          data: data.A,
+        },
+        {
+          name: "业务B",
+          data: data.B,
+        },
+        {
+          name: "业务C",
+          data: data.C,
+        },
       ],
-    },
-    yAxis: {
-      type: "value",
-    },
-    series: [
-      {
-        name: "业务A",
-        data: [], // 初始化为空
-        type: "bar",
-        stack: "total",
-        color: "#7EFDF4",
-        emphasis: {
-          focus: "series", // 鼠标悬停时聚焦到整个系列
-          itemStyle: {
-            borderColor: "#FFD700",
-            borderWidth: 2,
-          },
-        },
-      },
-      {
-        name: "业务B",
-        data: [], // 初始化为空
-        type: "bar",
-        stack: "total",
-        color: "#BFBCE7",
-        emphasis: {
-          focus: "series",
-          itemStyle: {
-            borderColor: "#FFD700",
-            borderWidth: 2,
-          },
-        },
-      },
-      {
-        name: "业务C",
-        data: [], // 初始化为空
-        type: "bar",
-        stack: "total",
-        color: "#FFFEA1",
-        emphasis: {
-          focus: "series",
-          itemStyle: {
-            borderColor: "#FFD700",
-            borderWidth: 2,
-          },
-        },
-      },
-    ],
-  };
+    };
+    myChart.setOption(option); // 更新图表数据
+  } else {
+    console.error("myChart is not initialized");
+  }
+};
 
-  myChart.setOption(option); // 设置图表
-}
+// 初始化图表函数
+const initChart = () => {
+  const chartDom = document.getElementById("trafficChart");
+  if (chartDom) {
+    myChart = echarts.init(chartDom); // 初始化 ECharts 实例
+
+    // 初始化图表配置
+    const option = {
+      tooltip: {
+        trigger: "axis", // 触发类型为整个坐标轴触发
+        axisPointer: {
+          type: "shadow", // 坐标轴指示器类型，'shadow' 表示显示为阴影
+        },
+        formatter: function (params) {
+          // 自定义的 tooltip 显示内容
+          const business = params
+            .map((p) => `${p.seriesName}: ${p.value}`)
+            .join("<br/>");
+          return `时间: ${params[0].axisValue}<br/>${business}`;
+        },
+      },
+      legend: {
+        data: ["业务A", "业务B", "业务C"], // 添加图例，显示各业务类型
+      },
+      xAxis: {
+        type: "category",
+        data: [
+          "0:00",
+          "3:00",
+          "6:00",
+          "9:00",
+          "12:00",
+          "15:00",
+          "18:00",
+          "21:00",
+        ], // X 轴时间点
+        axisLabel: {
+          rotate: 30, // X轴标签旋转30度，防止重叠
+        },
+      },
+      yAxis: {
+        type: "value", // Y 轴为数值类型
+      },
+      series: [
+        {
+          name: "业务A",
+          data: [], // 业务A的初始数据为空
+          type: "bar", // 显示为柱状图
+          stack: "total", // 数据堆叠
+          color: "#7EFDF4", // 自定义颜色
+          emphasis: {
+            focus: "series", // 鼠标悬停时聚焦到整个系列
+            itemStyle: {
+              borderColor: "#FFD700",
+              borderWidth: 2,
+            },
+          },
+        },
+        {
+          name: "业务B",
+          data: [], // 业务B的初始数据为空
+          type: "bar",
+          stack: "total",
+          color: "#BFBCE7",
+          emphasis: {
+            focus: "series",
+            itemStyle: {
+              borderColor: "#FFD700",
+              borderWidth: 2,
+            },
+          },
+        },
+        {
+          name: "业务C",
+          data: [], // 业务C的初始数据为空
+          type: "bar",
+          stack: "total",
+          color: "#FFFEA1",
+          emphasis: {
+            focus: "series",
+            itemStyle: {
+              borderColor: "#FFD700",
+              borderWidth: 2,
+            },
+          },
+        },
+      ],
+    };
+
+    myChart.setOption(option); // 设置图表配置
+  } else {
+    console.error("chartDom not found");
+  }
+};
 
 onMounted(() => {
-  initMap(); // 初始化地图
-  initChart(); // 初始化图表结构
+  initChart();
   searchStation(); // 加载基站1的数据并更新图表
 });
 </script>

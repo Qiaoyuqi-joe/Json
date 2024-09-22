@@ -1,7 +1,9 @@
 import { createApp } from "vue";
 import App from "./App.vue";
-import router from "./router/router";
+import router from "./router/router"; // 导入路由
+import store from "./store/store"; // 导入 Vuex store
 
 createApp(App)
-  .use(router) // 确保这里的 router 是已导入的
-  .mount("#app");
+  .use(router) // 使用路由
+  .use(store) // 使用 Vuex store
+  .mount("#app"); // 挂载应用

@@ -12,10 +12,11 @@
     "@amap/amap-jsapi-loader": "^1.0.1",
     "core-js": "^3.38.1",
     "echarts": "^5.5.1",
+    "traffic-flow-predictor": "file:",
     "vue": "^3.2.13",
     "vue-echarts": "^7.0.3",
     "vue-router": "^4.0.3",
-    "vuex": "^4.0.0"
+    "vuex": "^4.0.2"
   },
   "devDependencies": {
     "@babel/core": "^7.12.16",
