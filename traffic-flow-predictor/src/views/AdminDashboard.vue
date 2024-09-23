@@ -21,7 +21,7 @@
 
     <!-- 右侧基站信息和图表展示部分 -->
     <div class="right-section">
-      <h2>{{ stationInfo.name }}基站视图图</h2>
+      <h2>{{ stationInfo.name }}基站视图</h2>
       <div class="station-info">
         <div class="network-info">
           <h3>网络信息</h3>

@@ -1,5 +1,4 @@
 <template>
-  
   <div class="app-container">
     <header class="header">
       <h1>用户仪表盘</h1>
@@ -60,12 +59,10 @@ const userInfo = ref({
   totalTraffic: 2048,
 });
 
-
 // 搜索地点功能
 const searchLocation = () => {
   store.dispatch("searchLocation", searchQuery.value);
 };
-
 
 // 初始化图表的选项
 const upDownTrafficChartOptions = ref(null);
@@ -378,14 +375,17 @@ const loadChartData = () => {
       },
     ],
   };
-}
+};
 
 onMounted(() => {
-  
   loadChartData();
 
-  const upDownTrafficChart = echarts.init(document.getElementById("upDownTrafficChart"));
-  const baseStationTrafficChart = echarts.init(document.getElementById("baseStationTrafficChart"));
+  const upDownTrafficChart = echarts.init(
+    document.getElementById("upDownTrafficChart"),
+  );
+  const baseStationTrafficChart = echarts.init(
+    document.getElementById("baseStationTrafficChart"),
+  );
 
   upDownTrafficChart.setOption(upDownTrafficChartOptions.value);
   baseStationTrafficChart.setOption(baseStationTrafficChartOptions.value);
