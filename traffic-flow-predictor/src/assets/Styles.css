@@ -1,23 +1,69 @@
+/* 顶部标题栏样式 */
+.header {
+  position: fixed; /* 固定在顶部 */
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 60px; /* 标题栏高度 */
+  background: linear-gradient(
+    to right,
+    rgba(46, 46, 46, 0.5),
+    rgba(30, 30, 30, 0.9),
+    rgba(46, 46, 46, 0.5)
+  ); /* 两边为#2e2e2e(透明度0.8)，中间为#1e1e1e(透明度0.9)的渐变 */
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1001; /* 确保在导航栏之上 */
+  box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.3); /* 添加阴影 */
+}
+
+.header h1 {
+  margin: 0;
+  font-size: 24px;
+}
+
 /* 导航栏样式 */
 nav {
   position: fixed; /* 固定导航栏 */
   top: 0; /* 固定在页面顶部 */
   left: 0;
-  width: 100%; /* 确保导航栏占满宽度 */
-  background-color: #2e2e2e; /* 导航栏背景色，可以根据需要调整 */
+  width: 10px; /* 初始宽度较小，只显示图标或部分内容 */
+  height: 100vh; /* 导航栏高度占满整个屏幕 */
+  background-color: #2e2e2e; /* 导航栏背景色 */
   z-index: 1000; /* 确保导航栏在其他内容之上 */
   display: flex;
-  justify-content: space-around; /* 导航栏内容的布局 */
-  padding: 10px 20px;
-  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.3); /* 为导航栏添加阴影 */
+  flex-direction: column; /* 导航栏内容垂直布局 */
+  justify-content: space-around;
+  padding: 10px 0;
+  transition: width 0.3s ease; /* 鼠标划过时的过渡效果 */
+  overflow: hidden; /* 隐藏溢出的内容 */
+  box-shadow: 2px 0px 8px rgba(0, 0, 0, 0.3); /* 为导航栏添加阴影 */
 }
 
 nav a {
   color: white;
   text-decoration: none;
   padding: 10px 20px;
+  white-space: nowrap; /* 保持文字不换行 */
+  text-align: left; /* 文字左对齐 */
 }
 
+/* 鼠标划过时，展开导航栏 */
+nav:hover {
+  width: 200px; /* 鼠标划过时导航栏宽度变宽 */
+}
+
+/* 当导航栏在未展开状态下，隐藏部分文字，只显示图标 */
+nav a span {
+  display: none;
+}
+
+/* 鼠标划过时，显示完整文字 */
+nav:hover a span {
+  display: inline;
+}
 body {
   background-color: #2e2e2e;
   color: #ffffff;
@@ -26,11 +72,18 @@ body {
   padding: 0;
 }
 
+/* 内容容器样式，左边留出导航栏的位置 */
 .app-container {
   display: flex;
-  height: 100vh; /* 使容器高度占满整个视口 */
+  margin-left: 0px; /* 导航栏初始的宽度 */
+  height: 100vh;
+  transition: margin-left 0.3s ease;
 }
 
+/* 鼠标划过导航栏时，调整内容容器的偏移 */
+nav:hover ~ .app-container {
+  margin-left: 200px; /* 导航栏展开时的偏移 */
+}
 /* 左侧地图和搜索区域 */
 .left-section {
   width: 50%;
@@ -68,7 +121,7 @@ body {
 }
 
 .map-container {
-  width: 88%;
+  width: 90%;
   margin-left: 5%;
   margin-right: 5%;
   height: calc(100vh - 175px);
@@ -77,7 +130,7 @@ body {
 /* 右侧图表展示区域 */
 .right-section {
   width: 50%;
-  margin-top: 3%;
+  margin-top: 5%;
   background-color: #1e1e1e;
   padding: 20px;
   border-radius: 10px;
@@ -104,7 +157,7 @@ body {
 #upDownTrafficChart,
 #baseStationTrafficChart {
   width: 100%;
-  height: 400px;
+  height: 300px;
 }
 
 p {
@@ -141,7 +194,6 @@ p {
   height: 400px;
 }
 
-
 .user-info-box {
   background-color: #3c3c3c; /* 与其他区域背景颜色一致 */
   color: #ffffff; /* 字体颜色与页面统一 */
@@ -150,7 +202,7 @@ p {
   padding: 15px; /* 与图表展示区域一致的内边距 */
   margin-bottom: 20px;
   box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.3); /* 与图表展示区域相同的阴影效果 */
-  font-family: 'Arial', sans-serif;
+  font-family: "Arial", sans-serif;
 }
 
 .user-info-box h3 {
