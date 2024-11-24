@@ -1,0 +1,88 @@
+{
+    "type": "FeatureCollection",
+    "features": [
+        {
+            "type": "Feature",
+            "properties": {
+                "type": 0,
+                "ratio": 0.0369,
+                "lineWidthRatio": 1
+            },
+            "geometry": {
+                "type": "LineString",
+                "coordinates": [
+                    [116.405285,39.904989],[121.473662,31.230372]
+                ]
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "type": 1,
+                "ratio": 0.035,
+                "lineWidthRatio": 0.9447674418604651
+            },
+            "geometry": {
+                "type": "LineString",
+                "coordinates": [
+                    [121.473662,31.230372],[116.405285,39.904989]             
+                ]
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "type": 0,
+                "ratio": 0.0369,
+                "lineWidthRatio": 1
+            },
+            "geometry": {
+                "type": "LineString",
+                "coordinates": [
+                    [116.405285,39.904989],[113.26641,23.132324]
+                ]
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "type": 1,
+                "ratio": 0.035,
+                "lineWidthRatio": 0.9447674418604651
+            },
+            "geometry": {
+                "type": "LineString",
+                "coordinates": [
+                    [113.26641,23.132324],[116.405285,39.904989]             
+                ]
+            }
+        },{
+            "type": "Feature",
+            "properties": {
+                "type": 0,
+                "ratio": 0.0369,
+                "lineWidthRatio": 1
+            },
+            "geometry": {
+                "type": "LineString",
+                "coordinates": [
+                    [113.26641,23.132324],[121.473662,31.230372]
+                ]
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "type": 1,
+                "ratio": 0.035,
+                "lineWidthRatio": 0.9447674418604651
+            },
+            "geometry": {
+                "type": "LineString",
+                "coordinates": [
+                    [121.473662,31.230372],[113.26641,23.132324]                               
+                ]
+            }
+        }
+    ]
+}

@@ -1,0 +1,1 @@
+<div :backgroundColor="bgcolor" id="chart" />

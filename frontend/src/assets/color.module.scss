@@ -1,0 +1,14 @@
+
+$cardText:#CCCCCC;
+$cardTextDeep:#001C40;
+$highLight: #ff8923;
+$cardBackground: rgba(3,60,118,0.7);
+
+// 现在只有下面这个功能，用于js的使用
+// 因为App.vue ：root中的内容无法被子组件中的js使用，所以采用了这个全局颜色scss
+:export{
+    cardText: $cardText;
+    highLight: $highLight;
+    cardTextDeep: $cardTextDeep;
+    cardBackground: $cardBackground;
+}
