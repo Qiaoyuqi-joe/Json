@@ -31,7 +31,8 @@
 
 ### 用户接入请求列表frontend/AdminDashBoard.vue  
 该模块按照服务请求顺序展示用户画像分析，包括用户mac，用户所属基站，用户请求服务类别，上行or下行以及近24小时请求流量
-![Uploading image.png…]()
+![image](https://github.com/user-attachments/assets/b1a3ba56-e0aa-4be8-bd6c-e19f1bffb079)
+
 
 ## 后端模块组成
 ### pb文件夹
