@@ -35,11 +35,11 @@ export default {
             },
             clusters:[],
             //在后端数据基础上push四个节点测试用
-            node0:{ "name": "node5", "cpu_allocation": "311 mcores", "mem_allocation": "211MB", "cpu_used": "211 mcores", "mem_used": "111MB" },
-            node1:{ "name": "node6", "cpu_allocation": "311 mcores", "mem_allocation": "211MB", "cpu_used": "211 mcores", "mem_used": "111MB" },
-            node2:{ "name": "node7", "cpu_allocation": "311 mcores", "mem_allocation": "211MB", "cpu_used": "211 mcores", "mem_used": "111MB" },
-            node3:{ "name": "node8", "cpu_allocation": "311 mcores", "mem_allocation": "211MB", "cpu_used": "211 mcores", "mem_used": "111MB" },
-            link:[{ "source_node": "node3", "target_node": "node6", "offloading_percent": "136%"},{"source_node": "node4", "target_node": "node5", "offloading_percent": "135%"  },{ "source_node": "node3", "target_node": "node7", "offloading_percent": "136%"},{ "source_node": "node3", "target_node": "node8", "offloading_percent": "136%"}],
+          /*   node0:{ "name": "node5", "cpu_allocation": "311 mcores", "mem_allocation": "211MB", "cpu_used": "211 mcores", "mem_used": "111MB" }, */
+            /* node1:{ "name": "node6", "cpu_allocation": "311 mcores", "mem_allocation": "211MB", "cpu_used": "211 mcores", "mem_used": "111MB" }, */
+            /* node2:{ "name": "node7", "cpu_allocation": "311 mcores", "mem_allocation": "211MB", "cpu_used": "211 mcores", "mem_used": "111MB" }, */
+/*             node3:{ "name": "node8", "cpu_allocation": "311 mcores", "mem_allocation": "211MB", "cpu_used": "211 mcores", "mem_used": "111MB" },*/
+            /* link:[{ "source_node": "node3", "target_node": "node6", "offloading_percent": "136%"},{"source_node": "node4", "target_node": "node5", "offloading_percent": "135%"  },{ "source_node": "node3", "target_node": "node7", "offloading_percent": "136%"},{ "source_node": "node3", "target_node": "node8", "offloading_percent": "136%"}], */
       };
     },
     computed: {
@@ -65,8 +65,8 @@ export default {
             this.services.map((item,i)=>{
                 if(item.Name == this.selectedValue){
                     this.data.serviceinfo = item;
-                    this.data.serviceinfo.Nodes.push(this.node0,this.node1,this.node2,this.node3),
-                    this.data.serviceinfo.Decisions.push(this.link[0],this.link[1],this.link[2],this.link[3])
+                   /*  this.data.serviceinfo.Nodes.push(this.node0,this.node1,this.node2,this.node3),
+                    this.data.serviceinfo.Decisions.push(this.link[0],this.link[1],this.link[2],this.link[3]) */
                 }
             })
             this.importdata() //上传数据

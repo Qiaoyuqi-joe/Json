@@ -1,0 +1,112 @@
+/* 导航栏样式 */
+nav {
+  position: fixed; /* 固定导航栏 */
+  top: 0; /* 固定在页面顶部 */
+  left: 0;
+  width: 100%; /* 确保导航栏占满宽度 */
+  background-color: #2e2e2e; /* 导航栏背景色，可以根据需要调整 */
+  z-index: 1000; /* 确保导航栏在其他内容之上 */
+  display: flex;
+  justify-content: space-around; /* 导航栏内容的布局 */
+  padding: 10px 20px;
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.3); /* 为导航栏添加阴影 */
+}
+
+nav a {
+  color: white;
+  text-decoration: none;
+  padding: 10px 20px;
+}
+
+body {
+  background-color: #2C3E50;
+  color: #ffffff;
+  font-family: "Arial", sans-serif;
+  margin: 0;
+  padding: 0;
+}
+
+.app-container {
+  display: flex;
+  height: 100vh; /* 使容器高度占满整个视口 */
+}
+
+/* 左侧地图和搜索区域 */
+.left-section {
+  width: 50%;
+  padding-right: 20px;
+  position: fixed; /* 固定左侧地图区域 */
+  top: 10vh;
+  left: 0;
+  height: 100%; /* 高度占满屏幕 */
+  overflow: hidden; /* 禁止左侧滚动 */
+}
+
+.search-container {
+  margin-bottom: 10px;
+}
+
+.search-input {
+  width: 70%;
+  padding: 10px;
+  margin-right: 5%;
+  margin-left: 2%;
+  margin-bottom: 3%;
+  border-radius: 5px;
+  border: none;
+  background-color: #3c3c3c;
+  color: #ffffff;
+}
+
+.search-button {
+  padding: 10px 20px;
+  background-color: #4caf50;
+  border: none;
+  color: white;
+  cursor: pointer;
+  border-radius: 5px;
+}
+
+.map-container {
+  width: 88%;
+  margin-left: 5%;
+  margin-right: 5%;
+  height: calc(100vh - 175px);
+}
+
+/* 右侧图表展示区域 */
+.right-section {
+  width: 50%;
+  margin-top: 3%;
+  background-color: #1e1e1e;
+  padding: 20px;
+  border-radius: 10px;
+  margin-left: 50%; /* 使右侧内容出现在左侧地图旁边 */
+  overflow-y: scroll; /* 保持滚动功能 */
+  scrollbar-width: none; /* 隐藏 Firefox 的滚动条 */
+  height: 100vh; /* 右侧的高度占满屏幕 */
+}
+
+.chart-box {
+  background-color: #3c3c3c;
+  padding: 15px;
+  border-radius: 10px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.chart-box h3 {
+  color: #ffffff;
+  margin-bottom: 10px;
+  text-align: center;
+}
+
+#upDownTrafficChart,
+#baseStationTrafficChart {
+  width: 100%;
+  height: 400px;
+}
+
+p {
+  color: #0a6658;
+}

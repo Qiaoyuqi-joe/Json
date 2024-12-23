@@ -12,7 +12,12 @@ export default createStore({
             Decisions:[],
         },
         CNCSvcinfo:[],
-        CNCSvclist:[]
+        CNCSvclist:[],
+        clusterInfo:[],
+        basesInfo:[],
+        userInfo:[],
+        Users:[],
+        Basestations:[],
     },
     mutations:{
         
@@ -28,7 +33,7 @@ export default createStore({
             state.CNCServices = cncservices;
         },
         setCNCNodes(state,msg){
-            var info = JSON.parse(JSON.stringify(msg));
+            var info = msg;
             var cncnodes = [];
             info.map((item,i)=>{
                 cncnodes.push(item)
@@ -39,17 +44,15 @@ export default createStore({
             var tocontinue =  1;
             var info  = JSON.parse(JSON.stringify(msg));
             state.CNCSvcinfo.map((item,i)=>{
-                console.log("svc_name",item.Name)
                 if(item.Name == info.name)
                     tocontinue =  0
             })
             if(tocontinue==0){
-                console.log("不能继续")
                 return ;
             }
             if(state.CNCSvcinfo.length >= state.CNCServices.length)
                 return ;
-            console.log("state.CNCSvcinfo push之前",state.CNCSvcinfo)
+
             state.serviceinfo.Name = info.service_name;
             state.serviceinfo.Nodes = info.nodes;
             state.serviceinfo.Networks = info.networks;
@@ -68,6 +71,15 @@ export default createStore({
         setUserinfo(state,msg){
             var info = JSON.parse(JSON.stringify(msg));
             state.Userinfo = info;
+        },
+        setClusterinfo(state,msg){
+            console.log("ok")
+            var info = JSON.parse(JSON.stringify(msg));
+            var clusterinfo = info;
+            var baseinfo = info.bss;
+            state.clusterInfo = clusterinfo;
+            state.basesInfo = baseinfo;
+            console.log("cluster",state.clusterInfo)
         },
     }
 })

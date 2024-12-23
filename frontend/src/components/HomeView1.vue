@@ -29,7 +29,6 @@
 </template>
 
 <script setup>
-/* 该部分展示地图及用户画像分析柱状图，分别展示基站24小时流时分布图和不同基站部署不同服务的*/
 import AMapLoader from "@amap/amap-jsapi-loader";
 /* import { ref, onMounted } from "vue"; */
 import { ref, computed, watch, onMounted } from 'vue';
@@ -50,73 +49,48 @@ let map;
 let AMap;
 const clusterInfo = computed(() => store.state.clusterInfo);
 var bsTrafficPortrait = [];
-var traffic_24h = Array(48).fill(0);
+var traffic_24h = [];
 let serviceTraf = [];
 var bsPortrait = [] //基站画像
 var userPortrait = []//基站画像
-var svc = [];
 // 监听 clusterInfo 的变化
 watch(clusterInfo, (newVal, oldVal) => {
   console.log(store.state.clusterInfo)
   bsTrafficPortrait = bsPortrait.bs_traffic_list;
+  traffic_24h = [];
+  serviceTraf = [];
   bsPortrait = JSON.parse(JSON.stringify(store.state.clusterInfo.bss)) //基站画像
-  userPortrait = JSON.parse(JSON.stringify(store.state.clusterInfo.users)) //用户画像
+  userPortrait = JSON.parse(JSON.stringify(store.state.clusterInfo.users)) //基站画像
 });
   bsPortrait = JSON.parse(JSON.stringify(store.state.clusterInfo.bss)) //基站画像
-  console.log("bss",bsPortrait)
   userPortrait = JSON.parse(JSON.stringify(store.state.clusterInfo.users)) //基站画像
-  var trafficList =[];
-  userPortrait.map((item,i)=>{
-      trafficList.push(JSON.parse(JSON.stringify(item.user_traffic_list)));
-    })
-  var disList = [];
-  trafficList[0].map((item,i)=>{
-      disList.push(item);
-    })
-  console.log("users",userPortrait)
 function getTraffic_24h(){
-  
-    var trafficdis = Array(48).fill(0);
-    for(let i=0; i<disList.length;i++){
-      for(let j=0;j<48;j++){
-        trafficdis[j] = trafficdis[j]+disList[i].traf_dis[j];
-      }
+    var trafficList = userPortrait.user_traffic_list;
+    var trafficdis = trafficList[0].traf_dis;
+    for(let i=1; i<trafficList.length();i++){
+        trafficdis = trafficdis+trafficList[0].traf_dis;
     }
     traffic_24h = trafficdis;
     console.log("traffic",traffic_24h)
 }
 function getOrder(svcname,bsname){
-    var order = parseInt(svcname[7], 10)*4+parseInt(svcname[7], 10)-5;
+    var order = parseInt(svcname[7], 10)*4+parseInt(svcname[8], 10)-5;
     return order
 }
-var service_num =3;
+
 function getServicetraf(){
-    var svctraf = Array(12).fill(0);
-    for(let i=1; i<disList.length;i++){
-        var svcname = disList[i].traf_svcname;
-        var bsname = disList[i].traf_bsname;
+    var trafficList = userPortrait.user_traffic_list;
+    var svctraf = Array(12,0);
+    for(let i=1; i<trafficList.length();i++){
+      console.log("name",svcname,bsname)
+        var svcname = trafficList.traf_svcname;
+        var bsname = trafficList.traf_svcname;
         var order = getOrder(svcname,bsname);
-        console.log("name",svcname,bsname)
-        console.log("order",order)
-       /*  var sumtraf = disList[i].traf_dis.reduce((accumulator, currentValue) => accumulator + currentValue, 0); */
-        var sumtraf =0;
-        for(let j=0;j<48;j++){
-          sumtraf = sumtraf+disList[i].traf_dis[j];
-        }
-       svctraf[order] = svctraf[order]+sumtraf;
+        var sumtraf = trafficList[i].traf_dis.reduce((accumulator, currentValue) => accumulator + currentValue, 0);
+        svctraf[order] = svctraf[order]+sumtraf;
         serviceTraf = svctraf;
+        console.log("service_traf",serviceTraf)
     }
-    for(let i=0; i<service_num*4; i++){
-      var svci = [];
-        for (let j=0; j<4; j++){
-          svci.push(serviceTraf[i*4+j])
-        }
-      svc.push(svci)
-    }
-    console.log("svc",svc)
-    /* svc1.push(serviceTraf[0],serviceTraf[1],serviceTraf[2],serviceTraf[3]);
-    svc2.push(serviceTraf[4],serviceTraf[5],serviceTraf[6],serviceTraf[7]);
-    svc3.push(serviceTraf[8],serviceTraf[9],serviceTraf[10],serviceTraf[11]); */
 }
 
 function addMarker() {
@@ -303,6 +277,7 @@ function loadChartData() {
       },
     ],
   };
+
   baseStationTrafficChartOptions.value = {
     backgroundColor: "#2d2d2d",
     title: {
@@ -338,8 +313,7 @@ function loadChartData() {
       {
         name: "类别A",
         /* data: [100, 200, 150, 300], */
-        data:svc[0],
-        
+        data:[serviceTraf[0],serviceTraf[1],serviceTraf[2],serviceTraf[3]],
         type: "bar",
         stack: "流量",
         color: "#4caf50",
@@ -347,7 +321,7 @@ function loadChartData() {
       {
         name: "类别B",
         /* data: [50, 80, 70, 120], */
-        data:svc[1],
+        data:[serviceTraf[4],serviceTraf[5],serviceTraf[6],serviceTraf[7]],
         type: "bar",
         stack: "流量",
         color: "#81c784",
@@ -355,7 +329,7 @@ function loadChartData() {
       {
         name: "类别C",
         /* data: [30, 50, 40, 90], */
-        data:svc[2],
+        data:[serviceTraf[8],serviceTraf[9],serviceTraf[10],serviceTraf[11]],
         type: "bar",
         stack: "流量",
         color: "#c8e6c9",
@@ -366,10 +340,9 @@ function loadChartData() {
 
 onMounted(() => {
   initMap();
-  getTraffic_24h();
-  console.log(traffic_24h)
-  getServicetraf();
   loadChartData();
+  getTraffic_24h();
+  getServicetraf();
   const upDownTrafficChartDom = document.getElementById("upDownTrafficChart");
   const baseStationTrafficChartDom = document.getElementById(
     "baseStationTrafficChart",

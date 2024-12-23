@@ -79,7 +79,7 @@ body {
 
 .login-container {
     margin:0;
-    padding:-10px;
+    padding:0;
     height: 100vh;
     display: flex;
     align-items: center; /* 垂直居中 */

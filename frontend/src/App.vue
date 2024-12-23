@@ -3,7 +3,7 @@ import Comm_dynamic from './components/Comm_dynamic'
 import { Monitor, Menu, Histogram, Setting, InfoFilled } from '@element-plus/icons'
 // import DevicePixelRatio from '../utils/devicePixelRatio';
 
-const paths = ['/cncgraph','/cncchart','nettopology']
+const paths = ['/cncgraph','/cncchart','nettopology','usergraph','/admindashboard']
 export default {
     name: 'App',
     components: {
@@ -29,7 +29,6 @@ export default {
         getLogin(value){
             this.login = value
             this.$router.replace("/cncgraph")
-            console.log(value)
         },
     },
      mounted() {
@@ -73,9 +72,21 @@ export default {
                         </el-icon>
                         <span>Nettopology</span>
                     </el-menu-item>
+                    <el-menu-item :index="paths[3]">
+                        <el-icon>
+                            <Monitor />
+                        </el-icon>
+                        <span>Usergraph</span>
+                    </el-menu-item>
+                    <el-menu-item :index="paths[4]">
+                        <el-icon>
+                            <Monitor />
+                        </el-icon>
+                        <span>AdminDashboard</span>
+                    </el-menu-item>
                 </el-menu>
             </div>
-            <div id="header-title">算力网关开发平台（comEdge-Lite）</div>
+            <div id="header-title">算网融合平台（comEdge-Lite）</div>
                 
         </el-header>
       </el-container>
@@ -152,7 +163,7 @@ export default {
 
 #body {
    /*  height:100vh; */
-   background-color: rgba(236, 240, 241, 0.8);
+   background-color:"#2d2d2d";  /*rgba(236, 240, 241, 0.8);*/
     height: calc(100vh - var(--header-height));
     font-family: Yahei;
 }
@@ -186,7 +197,7 @@ export default {
 }
 
 #main {
-    background-color: rgba(236, 240, 241);
+    background-color:"#2d2d2d";/* rgba(236, 240, 241);*/
     padding: 0px;
     overflow: auto
 }

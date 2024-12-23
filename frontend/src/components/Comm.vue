@@ -49,7 +49,7 @@ export default {
             axios.get(url+"usergraph/userinfo")
             .then(response => {
                 console.log(response.data);
-                this.$store.commit('setUserinfo',response.data);
+                this.$store.commit('setClusterinfo',response.data);
             })
             .catch(error => {
                 console.error('Error fetching data: ', error);

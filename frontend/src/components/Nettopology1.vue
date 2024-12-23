@@ -1,47 +1,53 @@
 <script>
-/*
-使用neo4j数据库图可视化功能构建网络拓扑图
-该代码展示网络拓扑图，显示基站之间联通情况以及带宽，用户状态初始隐藏。
-点击某基站后隐藏其他基站，展示该与该基站相连的用户，并在右侧展示基站信息表，内容包括：
-基站名称、节点类型（基站）、基站所属集群、与基站连接的用户节点、基站部署的服务，在下方展示包含该基站的拓扑子图
-点击用户节点时展示用户信息，包括用户名称、节点类型（基站）、基站所属集群、与基站连接的用户节点、基站部署的服务
-拓扑图下方展示网络将拓扑结构状态表
-*/ 
+/*网络拓扑图假数据版本*/
 import neo4j from 'neo4j-driver';
-import { mainModule } from 'process';
 import { DataSet, Network } from 'vis-network/standalone';
-import store from '../store/store'
 export default {
 name: 'Nettopology',
 data() {
     return {
         selectedValue: null,
         selectedNode: null,
-        service_num : 0,
         service_list: [],
-        serviceinfo:{
-            Name:[],
-            Nodes:[],
-            Networks:[],
-            Decisions:[]
-        },
         nodes: [],
         edges: [],
         nodes1:[],
         edges1:[],
-        nodeNames: [],
+        nodeNames: ['Node1', 'Node2', 'Node3', 'Node4', 'Node5', 'Node6', 'Node7', 'Node8'],
         baseNodeColors: {
           ClusterA: { background: '#FF5733', border: '#C70039' }, // 红色
-          ClusterB: { background: '#2196F3', border: '#1E88E5' }, // 蓝色
+          ClusterB: { background: '#2196F3', border: '#1E88E5' }, // 绿色
         },
         initialNodeColors: {},
         connectedNodes: { users: [], services: [] },
         connectedUserNodes:{bases: [], services: []},
         weights:[],
         showBackButton: false, 
-        baseNodes: [],     
-        userNodes: [],
-        serviceNodes: [],
+        baseNodes: [
+          { name: "BaseNode1", cluster: "ClusterA" },
+          { name: "BaseNode2", cluster: "ClusterB" },
+          { name: "BaseNode3", cluster: "ClusterB" },
+          { name: "BaseNode4", cluster: "ClusterA" },
+          { name: "BaseNode5", cluster: "ClusterA" },
+          { name: "BaseNode6", cluster: "ClusterB" },
+          { name: "BaseNode7", cluster: "ClusterB" },
+          { name: "BaseNode8", cluster: "ClusterB" },
+        ],     
+        userNodes: Array.from({ length: 50 }, (_, i) => ({
+          name: `User${i + 1}`,
+          cpu_allocation: "50 mcores",
+          mem_allocation: "50MB",
+          cpu_used: "25 mcores",
+          mem_used: "25MB",
+          cluster: i % 2 === 0 ? "ClusterA" : "ClusterB",
+          connected: false,
+        })),
+        serviceNodes: [
+          { name: "Service1", cpu_allocation: "100 mcores", mem_allocation: "100MB", cpu_used: "50 mcores", mem_used: "50MB" },
+          { name: "Service2", cpu_allocation: "200 mcores", mem_allocation: "200MB", cpu_used: "100 mcores", mem_used: "100MB" },
+          { name: "Service3", cpu_allocation: "300 mcores", mem_allocation: "300MB", cpu_used: "150 mcores", mem_used: "150MB" },
+          { name: "Service4", cpu_allocation: "400 mcores", mem_allocation: "400MB", cpu_used: "200 mcores", mem_used: "200MB" },
+        ],
     };
 },
     created() {
@@ -56,7 +62,7 @@ data() {
     },
     watch: {
       selectedNode(newNode) {
-        if (newNode && newNode.id.startsWith('Base')) {
+        if (newNode && newNode.id.startsWith('BaseNode')) {
           this.$nextTick(() => {
             this.initBaseNetwork();
           });
@@ -64,8 +70,8 @@ data() {
       }
     },
     mounted() {
-        this.importdata(); //构建数据结构
-        this.initNetwork(); //初始化图可视化网络
+        this.importdata();
+        this.initNetwork();
     },
     beforeDestroy() {
         if (this.session) {
@@ -76,35 +82,9 @@ data() {
         }
     },
     methods: {
-      async importdata() {  
-        this.service_num =4; //读取后端数据创建服务节点
-        this.serviceinfo = JSON.parse(JSON.stringify(store.state.CNCSvcinfo[1]));
-        for(var i=0; i<this.service_num;i++){
-            this.service_list.push("service"+(i+1))
-            this.serviceNodes.push({
-                name: "Service"+(i+1),
-                label:"Service"+(i+1),
-                id:"Service"+(i+1),
-            })
-        }
-        this.serviceinfo.Nodes.map((item,i)=>{  //将用户节点、基站节点构建为图可视化数据库结构
-            this.nodeNames.push(item.name);
-            this.baseNodes.push({name: 'Base'+item.name,cluster: item.cluster,users:item.users})
-            item.users.map((tmp,i)=>{
-                this.userNodes.push({
-                    name:tmp.user_name,
-                    cpu_allocation: tmp.user_cpuallocation,
-                    mem_allocation: tmp.user_memallocation,
-                    cpu_used: tmp.user_cpuused,
-                    mem_used: tmp.user_memused,
-                    cluster: tmp.user_cluster,
-                    services: tmp.user_services,
-                    connected: false,
-                })
-            })
-        });
-        const tx = this.session.beginTransaction();//数据库传输链接
-        const nodes = [...this.serviceNodes, ...this.baseNodes, ...this.userNodes];//节点统一存储
+      async importdata() {
+        const tx = this.session.beginTransaction();
+        const nodes = [...this.serviceNodes, ...this.baseNodes, ...this.userNodes];
         try {
           await tx.run('MATCH (n) DETACH DELETE n');
   
@@ -119,7 +99,7 @@ data() {
               mem_used: item.mem_used || null,
               mem_total: item.mem_allocation || null,
               cluster: item.cluster || null,
-              size: (item.name == 'BaseNode1'||item.name == 'BaseNode2'||item.name == 'BaseNode3'||item.name == 'BaseNode4'||item.name == 'BaseNode5'||item.name == 'BaseNode6'||item.name == 'BaseNode7'||item.name == 'BaseNode8')?100:20,
+              size: (item.name == 'BaseNode1'||item.name == 'BaseNode2'||item.name == 'BaseNode3'||item.name == 'BaseNode4'||item.name == 'BaseNode5'||item.name == 'BaseNode6'||item.name == 'BaseNode7'||item.name == 'BaseNode8')?100:20
             });
           }
           this.weights = Array.from({ length: this.baseNodes.length }, () => Array(this.baseNodes.length).fill(0));
@@ -148,7 +128,7 @@ data() {
               });
             }
           }
-          // 每个基站与四个服务节点相连（前端设置为不显示，但在图数据库仍然为它们建边）
+          // 每个基站与四个服务节点相连（后来决定不显示，但程序没删）
           for (const baseNode of this.baseNodes) {
             const connectedServices = this.serviceNodes.sort(() => 0.5 - Math.random()).slice(0, 4);
             for (const service of connectedServices) {
@@ -160,36 +140,32 @@ data() {
           }
           // 每个用户节点连接 1 到 4 个服务节点(也未显示)
           for (const user of this.userNodes) {
-           /*  var userServicesArray = Array.prototype.slice.call(user.services); */
-             var userServicesArray = user.services; 
-            if(userServicesArray == null)
-                continue
-            for (const service of userServicesArray) {
-                this.serviceNodes.map((item,i)=>{
-                    if(item.name == service){
-                        tx.run('MATCH (a:Node {id: $from}), (b:Node {id: $to}) CREATE (a)-[:CONNECTED_TO]->(b)', {
-                            from: user.name,
-                            to: item.name
-                        });
-                    }
-                })
-              
+            const numberOfConnections = Math.floor(Math.random() * 8) + 1;
+            const connectedServices = this.serviceNodes.sort(() => 0.5 - Math.random()).slice(0, numberOfConnections);
+            for (const service of connectedServices) {
+              await tx.run('MATCH (a:Node {id: $from}), (b:Node {id: $to}) CREATE (a)-[:CONNECTED_TO]->(b)', {
+                from: user.name,
+                to: service.name
+              });
             }
           }
   
           // 每个用户节点连接且仅连接一个基站节点
-           for (var basenode of this.baseNodes) {
-                for(var usernode of basenode.users){
-                    await tx.run('MATCH (a:Node {id: $from}), (b:Node {id: $to}) CREATE (a)-[:CONNECTED_TO]->(b)', {
-                    from: usernode.user_name,
-                    to: basenode.name
-                 });
-                }
+          for (const user of this.userNodes) {
+            const matchingBaseNodes = this.baseNodes.filter(base => base.cluster === user.cluster);
+            if (matchingBaseNodes.length > 0) {
+              const randomBaseNode = matchingBaseNodes[Math.floor(Math.random() * matchingBaseNodes.length)];
+              await tx.run('MATCH (a:Node {id: $from}), (b:Node {id: $to}) CREATE (a)-[:CONNECTED_TO]->(b)', {
+                from: user.name,
+                to: randomBaseNode.name
+              });
             }
+          }
   
           await tx.commit();
           await this.fetchGraph();
         } catch (error) {
+          console.error("上传数据时出错:", error);
           await tx.rollback();
         }
       },
@@ -206,22 +182,22 @@ data() {
             let nodeColor;
             let nodeSize = 5; // 默认节点大小
   
-            if (node.properties.cluster === "1") {
+            if (node.properties.cluster === "ClusterA") {
               nodeColor = this.baseNodeColors.ClusterA;
-            } else if (node.properties.cluster === "2") {
+            } else if (node.properties.cluster === "ClusterB") {
               nodeColor = this.baseNodeColors.ClusterB;
             } else {
               nodeColor = {background: '#33FF57', border: '#39C700'}; // 默认蓝色
             }
   
             // 判断是否为 BaseNode，设置较大的节点框
-            if (node.properties.label.startsWith('Base')) {
+            if (node.properties.label.startsWith('BaseNode')) {
               nodeSize = 300; // 增加 BaseNode 的大小
               this.initialNodeColors[nodeId] = { ...nodeColor };
             }
-            
-            // 仅添加 BaseNode 隐藏 UserNode和ServiceNode
-            if (node.properties.label.startsWith('Base') ) {
+  
+            // 仅添加 BaseNode 和 ServiceNode，隐藏 UserNode
+            if (node.properties.label.startsWith('BaseNode') ) {
               this.nodes.push({
                 id: nodeId,
                 label: node.properties.label,
@@ -255,8 +231,8 @@ data() {
             const weight = record.get('weight');
   
             // 仅当边的两个节点都是 BaseNode 时，显示权重
-            const fromIsBaseNode = fromNode.startsWith('Base');
-            const toIsBaseNode = toNode.startsWith('Base');
+            const fromIsBaseNode = fromNode.startsWith('BaseNode');
+            const toIsBaseNode = toNode.startsWith('BaseNode');
   
             this.edges.push({ 
               from: fromNode, 
@@ -357,7 +333,7 @@ data() {
         const options = {
           physics: {
             enabled: true,
-   /*          updateInterval:1000, // 更新间隔 */
+            updateInterval:1000, // 更新间隔
             barnesHut: {
               gravitationalConstant: -10000,
               centralGravity: 0.9,
@@ -401,10 +377,10 @@ data() {
        this.basenetwork = new Network(baseContainer, data1, options); 
        
       },
-      showUserConnectedNodes(userNodeId) {
+        showUserConnectedNodes(userNodeId) {
           // 获取与用户节点连接的基站
           const connectedBaseNodes = this.edges
-              .filter(edge => edge.from === userNodeId && edge.to.startsWith('Base'))
+              .filter(edge => edge.from === userNodeId && edge.to.startsWith('BaseNode'))
               .map(edge => edge.to)
               .sort();
 
@@ -419,6 +395,7 @@ data() {
 
         // 更新选中的节点信息
         this.selectedNode = this.nodes.find(node => node.id === userNodeId);
+        console.log("this.selectedNode",this.selectedNode)
       },
     resetView() {
         this.fetchGraph();
@@ -428,10 +405,12 @@ data() {
 
       },
     handleClickedNodes(baseNodeId){
+      console.log("here")
       this.showConnectedUserNodes(baseNodeId)
       this.getBasetopo(baseNodeId);
     },
     showConnectedUserNodes(baseNodeId) {
+        console.log("点击了")
         const clickedNode = this.nodes.find(node => node.id === baseNodeId);
         const cluster = clickedNode.cluster;
         const baseColor = this.baseNodeColors[cluster];
@@ -448,20 +427,35 @@ data() {
           users: connectedUsers,
           services: connectedServices,
         };
+        console.log("connectednodes",this.connectedNodes)
         // 更新选中的节点信息
        this.selectedNode = this.nodes.find(node => node.id === baseNodeId);
+
+      // 保留所有 BaseNode
         this.nodes.forEach(node => {
-          node.hidden = !(connectedUsers.includes(node.id)||node.id === baseNodeId) 
-          if (node.label.startsWith('User')){
-            node.color = this.initialNodeColors[baseNodeId].background
+          if (node.id === baseNodeId) {
+            node.color = this.initialNodeColors[node.id]; 
+          } else if (connectedUsers.includes(node.id)) {
+            node.color = baseColor;
+            node.hidden = false;
+          } else if (this.initialNodeColors[node.id]) {
+            node.color = this.initialNodeColors[node.id];
+          } else if (node.label.startsWith('User')) {
+            node.hidden = true;
           }
         });
 
+        this.nodes.forEach(node => {
+          node.hidden = !(connectedUsers.includes(node.id)||node.id === baseNodeId) 
+        });
+
+
         this.edges.forEach(edge => {
           if ((edge.to === baseNodeId ||edge.from === baseNodeId) ) {
+              console.log(connectedUsers)
               edge.color = { color: this.initialNodeColors[baseNodeId].background, highlight: this.initialNodeColors[baseNodeId].background }
             edge.width = 1; // 加粗
-          } else if(edge.from.startsWith('Base') && edge.to.startsWith('Base')) {
+          } else if(edge.from.startsWith('BaseNode') && edge.to.startsWith('BaseNode')) {
             edge.color = { color: '#9E9E9E' }; // 默认颜色
             edge.width = 2; // 恢复默认宽度
           }else if (edge.from.startsWith('User') ||edge.to.startsWith('User')){
@@ -513,6 +507,7 @@ data() {
           edge.color = { color: '#9E9E9E' }; // 默认颜色
           edge.width = 2;
         });
+        console.log("selected",this.selectedNode)
         this.updateBaseNetwork();
       },
       updateBaseNetwork(){
@@ -543,53 +538,53 @@ data() {
         <button v-if="showBackButton" class="back-button" @click="resetView">返回网络拓扑图</button>
         
         <div v-if="selectedNode" class="info-panel">
-          <h3 style="color: white;">节点信息</h3>
-          <p style="color: white;"><strong>节点名称:</strong> {{ selectedNode.name }}</p>
-        <div v-if="selectedNode.id.startsWith('Base')" >
-            <h4 style="color: white;">节点类型</h4>
+          <h3>节点信息</h3>
+          <p><strong>节点名称:</strong> {{ selectedNode.name }}</p>
+        <div v-if="selectedNode.id.startsWith('BaseNode')" >
+            <h4>节点类型</h4>
           <ul>
-            <li style="color: white;">基站</li>
+            <li >基站</li>
           </ul>
-          <p style="color: white;"><strong>所属集群:</strong> {{ selectedNode.cluster }}</p> 
-          <h4 style="color: white;">基站连接的用户节点:</h4>
+          <p><strong>所属集群:</strong> {{ selectedNode.cluster }}</p> 
+          <h4>基站连接的用户节点:</h4>
           <ul>
-            <li style="color: white;" v-for="user in connectedNodes.users" :key="user">{{ user }}</li>
+            <li v-for="user in connectedNodes.users" :key="user">{{ user }}</li>
           </ul>
-          <h4 style="color: white;">该基站部署的服务:</h4>
+          <h4>该基站部署的服务:</h4>
           <ul>
-            <li style="color: white;" v-for="service in connectedNodes.services" :key="service">{{ service }}</li>
+            <li v-for="service in connectedNodes.services" :key="service">{{ service }}</li>
           </ul>
         </div>
 
         <div v-else-if="selectedNode.id.startsWith('User')">
-            <h4 style="color: white;">节点类型</h4>
+            <h4>节点类型</h4>
           <ul>
-            <li style="color: white;" >用户</li>
+            <li >用户</li>
           </ul>
-          <p style="color: white;"><strong>所属集群:</strong> {{ selectedNode.cluster }}</p> 
-          <h4 style="color: white;">该用户连接的基站:</h4>
+          <p><strong>所属集群:</strong> {{ selectedNode.cluster }}</p> 
+          <h4>该用户连接的基站:</h4>
           <ul>
-            <li style="color: white;" v-for="base in connectedUserNodes.bases" :key="base">{{ base }}</li>
+            <li v-for="base in connectedUserNodes.bases" :key="base">{{ base }}</li>
           </ul>
-          <h4 style="color: white;">该用户部署的服务</h4> 
+          <h4>该用户部署的服务</h4> 
           <ul>
-            <li style="color: white;" v-for="service in connectedUserNodes.services" :key="service">{{ service }}</li>
+            <li v-for="service in connectedUserNodes.services" :key="service">{{ service }}</li>
           </ul>
         </div>
 
       </div>
       <div v-if="selectedNode" >
-          <div v-if="selectedNode.id.startsWith('Base')">
-          <h2 style="color: white;">与当前基站相关的拓扑结构</h2>
+          <div v-if="selectedNode.id.startsWith('BaseNode')">
+          <h2>与当前基站相关的拓扑结构</h2>
           <div ref="basenetwork" class = "base-container"></div>
         </div>
       </div>
     <div>
-        <h2 style="color: white;">网络状态表</h2>
+        <h2>网络状态表</h2>
         <table>
             <thead>
             <tr>
-            <th style="color: white;">起始/终止节点</th>
+            <th>起始/终止节点</th>
             <th v-for="node in nodeNames" :key="node">{{ node }}</th>
             </tr>
         </thead>
@@ -606,22 +601,19 @@ data() {
   <style>
   .chart-container {
   position: relative;
- /*  background-color: rgba(236, 240, 241); */ /* 淡色背景 */
- /*  background-color: rgba(0,0,0); */
+  background-color: rgba(236, 240, 241); /* 淡色背景 */
   
   
 }
   .network-container{
     /* position:absolute; */
-    /* background-color:rgba(216, 220, 221, 0.8); */
- /*    background-color: rgba(0,0,0); */
+    background-color:rgba(216, 220, 221, 0.8);
     border-radius: 10px; /* 圆角效果 */
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2); /* 增加阴影 */
     padding: 20px; /* 增加内边距 */
   }
   .base-container{
-    /* background-color:rgba(216, 220, 221, 0.8); */
-   /*  background-color: rgba(0,0,0); */
+    background-color:rgba(216, 220, 221, 0.8);
     border-radius: 10px; /* 圆角效果 */
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2); /* 增加阴影 */
     padding: 40px; /* 增加内边距 */
@@ -632,8 +624,7 @@ data() {
     position: absolute;
     top: 120px; /* 距离顶部的距离 */
     right: 100px; /* 距离右侧的距离 */
-   /*  background-color: rgba(255, 255, 255, 0.9); */
-/*    background-color: rgba(0,0,0); */
+    background-color: rgba(255, 255, 255, 0.9);
     border: 1px solid #ccc;
     border-radius: 8px;
     padding: 10px;
@@ -644,8 +635,7 @@ data() {
     width: 200px; /* 浮窗宽度 */
   }
   .table-container {
-    /* background-color: rgba(236, 240, 241, 0.8); */ /* 表格背景色 */
-   /*  background-color: rgba(20,20,20,0.4); */
+    background-color: rgba(236, 240, 241, 0.8); /* 表格背景色 */
     border-radius: 8px; /* 圆角效果 */
     padding: 20px; /* 内边距 */
     margin-top: 40px; /* 与图的间距 */
